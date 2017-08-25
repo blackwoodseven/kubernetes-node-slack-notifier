@@ -1,0 +1,11 @@
+version: "2.1"
+services:
+  kubernetes-node-watcher:
+    build: .
+    volumes:
+    - ./serviceaccount:/var/run/secrets/kubernetes.io/serviceaccount/
+  test:
+    build: .
+    command: gradle -t test
+    volumes:
+    - .:/kubernetes-node-watcher
