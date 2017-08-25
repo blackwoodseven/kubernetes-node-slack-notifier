@@ -17,7 +17,9 @@ fun processNodeChange(nodeChange: NodeChange, nodeMap: Map<String, IPAddress?>):
 fun processLine(line: String, nodeMap: Map<String, IPAddress?>, slackPoster: SlackPoster): Map<String, IPAddress?> {
     val nodeChange = ResponseProcessor().parseNodeChange(line)
     val newMap = processNodeChange(nodeChange, nodeMap)
-    slackPoster.post(nodeChange, nodeMap)
+    if (setOf(NodeChangeType.DELETED, NodeChangeType.ADDED).contains(nodeChange.type)) {
+        slackPoster.post(nodeChange, nodeMap)
+    }
 
     return newMap
 }
