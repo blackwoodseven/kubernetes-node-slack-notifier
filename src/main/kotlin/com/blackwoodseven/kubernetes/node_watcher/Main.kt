@@ -24,6 +24,16 @@ fun processLine(line: String, nodeMap: Map<String, IPAddress?>, slackPoster: Sla
     return newMap
 }
 
+fun setupShutdownHandler(slackPoster: SlackPoster) {
+    Runtime.getRuntime().addShutdownHook(
+            object : Thread() {
+                override fun run() {
+                    slackPoster.shutdownMessage()
+                }
+            }
+    )
+}
+
 fun main(args : Array<String>) {
     val config = Config.parseConfig()
 
@@ -33,10 +43,11 @@ fun main(args : Array<String>) {
 
     val nodeMap = nodeList.items.map { it.metadata.name to it.externalIP }.toMap()
     logger.info { "Initial known nodes: ${nodeMap.values}" }
+    val slackPoster = SlackPoster(config.slackWebhook)
+    setupShutdownHandler(slackPoster)
 
     val changeCharStream = kubernetesAPI.fetchNodeChangeStream(nodeList.metadata.resourceVersion)
     changeCharStream?.useLines { lineSource ->
-        val slackPoster = SlackPoster(config.slackWebhook)
         lineSource.fold(nodeMap) { map, line ->
             processLine(line, map, slackPoster)
         }

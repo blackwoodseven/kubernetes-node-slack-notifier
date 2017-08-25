@@ -18,6 +18,8 @@ data class SlackMessage(
 )
 
 class SlackPoster(private val webhook: String) {
+    private val client = OkHttpClient.Builder().build()
+
     fun formatMessage(change: NodeChange, nodeList: Map<String, IPAddress?>): SlackMessage {
         return SlackMessage(
                 "The node `${change.`object`.externalIP}` has been ${change.type.name.toLowerCase()}",
@@ -35,9 +37,19 @@ class SlackPoster(private val webhook: String) {
 
     fun post(change: NodeChange, nodeList: Map<String, IPAddress?>) {
         val slackMessage = formatMessage(change, nodeList)
-        val json = convertMessageToJson(slackMessage)
+        sendSlackMessage(slackMessage)
+    }
 
-        val client = OkHttpClient.Builder().build()
+    fun shutdownMessage() {
+        val slackMessage = SlackMessage(
+                "The node slack notifier has been asked to shutdown, this might be due to the node it's running on shutting down.\nWatch the next notification closely to see if a node has been removed.",
+                emptyList()
+        )
+        sendSlackMessage(slackMessage)
+    }
+
+    private fun sendSlackMessage(slackMessage: SlackMessage) {
+        val json = convertMessageToJson(slackMessage)
         val req = Request.Builder()
                 .url(webhook)
                 .post(RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json))
