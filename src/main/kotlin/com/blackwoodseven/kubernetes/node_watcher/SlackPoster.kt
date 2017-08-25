@@ -43,5 +43,6 @@ class SlackPoster(private val webhook: String) {
                 .post(RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json))
                 .build()
         val response = client.newCall(req).execute()
+        response.body()?.close()
     }
 }
