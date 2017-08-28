@@ -28,11 +28,10 @@ fun processLine(line: String, nodeMap: ConcurrentMap<String, IPAddress?>, slackP
     }
 }
 
-fun setupShutdownHandler(slackPoster: SlackPoster, leaderLock: ILock) {
+fun setupShutdownHandler(leaderLock: ILock) {
     Runtime.getRuntime().addShutdownHook(
             object : Thread() {
                 override fun run() {
-//                    slackPoster.shutdownMessage()
                     leaderLock.unlock()
                 }
             }
@@ -62,7 +61,7 @@ fun main(args : Array<String>) {
     val globalNodeMap = hazelcast.getMap<String, IPAddress?>("nodeMap")
 
     val slackPoster = SlackPoster(config.slackWebhook)
-    setupShutdownHandler(slackPoster, leaderLock)
+    setupShutdownHandler(leaderLock)
 
     val kubernetesAPI = KubernetesAPI(config.k8sHostname, config.k8sUsername, config.k8sPassword, FileSystems.getDefault())
 
