@@ -2,6 +2,7 @@ package com.blackwoodseven.kubernetes.node_watcher
 
 import com.google.gson.Gson
 import inet.ipaddr.IPAddress
+import mu.KotlinLogging
 import okhttp3.MediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -17,6 +18,8 @@ data class SlackMessage(
         val attachments: List<SlackAttachment>
 )
 
+private val logger = KotlinLogging.logger {}
+
 class SlackPoster(private val webhook: String) {
     private val client = OkHttpClient.Builder().build()
 
@@ -30,14 +33,33 @@ class SlackPoster(private val webhook: String) {
         )
     }
 
+    fun formatMessage(action: NodeChangeType, ip: IPAddress, nodeList: Map<String, IPAddress?>): SlackMessage {
+        return SlackMessage(
+                "The node `$ip` has been ${action.name.toLowerCase()}",
+                listOf(SlackAttachment(
+                        "Current Nodes:",
+                        nodeList.values.filterNotNull().map { it.toString() }.sorted().joinToString("\n")
+                ))
+        )
+    }
+
     fun convertMessageToJson(slackMessage: SlackMessage): String {
         val gson = Gson()
         return gson.toJson(slackMessage)
     }
 
-    fun post(change: NodeChange, nodeList: Map<String, IPAddress?>) {
-        val slackMessage = formatMessage(change, nodeList)
+    fun post(action: NodeChangeType, ip: IPAddress, nodeList: Map<String, IPAddress?>) {
+        val slackMessage = formatMessage(action, ip, nodeList)
         sendSlackMessage(slackMessage)
+    }
+
+    fun post(change: NodeChange, nodeList: Map<String, IPAddress?>) {
+        val externalIP = change.`object`.externalIP
+        if (externalIP != null) {
+            post(change.type, externalIP, nodeList)
+        } else {
+            logger.warn { "Tried to post null IP to slack..." }
+        }
     }
 
     fun shutdownMessage() {

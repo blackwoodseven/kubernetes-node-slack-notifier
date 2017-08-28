@@ -7,6 +7,7 @@ import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
 import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 
 
 class MainSpec : Spek({
@@ -18,29 +19,30 @@ class MainSpec : Spek({
 
     describe("processNodeChange") {
         it("should do nothing for MODIFIED") {
-            val nodeMap = mapOf(
+            val nodeMap = ConcurrentHashMap(mapOf(
                     "node1" to IPAddressString("127.0.0.1").address,
                     "node2" to IPAddressString("127.0.0.2").address
-            )
+            ))
+
 
             val nodeChange = NodeChange(
                     NodeChangeType.MODIFIED,
                     mock(Node::class)
             )
 
-            val result = processNodeChange(nodeChange, nodeMap)
+            processNodeChange(nodeChange, nodeMap)
 
-            result shouldEqual mapOf(
+            nodeMap shouldEqual mapOf(
                     "node1" to IPAddressString("127.0.0.1").address,
                     "node2" to IPAddressString("127.0.0.2").address
             )
         }
 
         it("should return a new map with the new node for ADDED") {
-            val nodeMap = mapOf(
+            val nodeMap = ConcurrentHashMap(mapOf(
                     "node1" to IPAddressString("127.0.0.1").address,
                     "node2" to IPAddressString("127.0.0.2").address
-            )
+            ))
             val newNode = Node(
                     NodeMetadata(
                             "node3",
@@ -61,9 +63,9 @@ class MainSpec : Spek({
                     newNode
             )
 
-            val result = processNodeChange(nodeChange, nodeMap)
+            processNodeChange(nodeChange, nodeMap)
 
-            result shouldEqual mapOf(
+            nodeMap shouldEqual mapOf(
                     "node1" to IPAddressString("127.0.0.1").address,
                     "node2" to IPAddressString("127.0.0.2").address,
                     "node3" to IPAddressString("127.0.0.3").address
@@ -71,10 +73,10 @@ class MainSpec : Spek({
         }
 
         it("should return a new map without the removed node for DELETED") {
-            val nodeMap = mapOf(
+            val nodeMap = ConcurrentHashMap(mapOf(
                     "node1" to IPAddressString("127.0.0.1").address,
                     "node2" to IPAddressString("127.0.0.2").address
-            )
+            ))
             val deletedNode = Node(
                     NodeMetadata(
                             "node2",
@@ -88,9 +90,9 @@ class MainSpec : Spek({
                     deletedNode
             )
 
-            val result = processNodeChange(nodeChange, nodeMap)
+            processNodeChange(nodeChange, nodeMap)
 
-            result shouldEqual mapOf(
+            nodeMap shouldEqual mapOf(
                     "node1" to IPAddressString("127.0.0.1").address
             )
         }

@@ -30,6 +30,8 @@ dependencies {
     compile 'org.slf4j:slf4j-simple:1.7.25'
     compile 'com.github.seancfoley:ipaddress:3.0.0'
     compile 'com.github.salomonbrys.kotson:kotson:2.5.0'
+    compile 'com.hazelcast:hazelcast:3.8.4'
+    compile 'com.hazelcast:hazelcast-kubernetes:1.0.0'
 
     testCompile 'com.squareup.okhttp3:mockwebserver:3.8.1'
 
