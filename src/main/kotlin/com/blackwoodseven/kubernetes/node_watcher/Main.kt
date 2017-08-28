@@ -36,20 +36,23 @@ fun setupShutdownHandler(slackPoster: SlackPoster) {
 
 fun main(args : Array<String>) {
     val config = Config.parseConfig()
-
-    val kubernetesAPI = KubernetesAPI(config.k8sHostname, config.k8sUsername, config.k8sPassword, FileSystems.getDefault())
-
-    val nodeList = kubernetesAPI.fetchNodeList()
-
-    val nodeMap = nodeList.items.map { it.metadata.name to it.externalIP }.toMap()
-    logger.info { "Initial known nodes: ${nodeMap.values}" }
     val slackPoster = SlackPoster(config.slackWebhook)
     setupShutdownHandler(slackPoster)
 
-    val changeCharStream = kubernetesAPI.fetchNodeChangeStream(nodeList.metadata.resourceVersion)
-    changeCharStream?.useLines { lineSource ->
-        lineSource.fold(nodeMap) { map, line ->
-            processLine(line, map, slackPoster)
+    val kubernetesAPI = KubernetesAPI(config.k8sHostname, config.k8sUsername, config.k8sPassword, FileSystems.getDefault())
+
+    while(true) {
+        val nodeList = kubernetesAPI.fetchNodeList()
+
+        val nodeMap = nodeList.items.map { it.metadata.name to it.externalIP }.toMap()
+        logger.info { "Initial known nodes: ${nodeMap.values}" }
+
+
+        val changeCharStream = kubernetesAPI.fetchNodeChangeStream(nodeList.metadata.resourceVersion)
+        changeCharStream?.useLines { lineSource ->
+            lineSource.fold(nodeMap) { map, line ->
+                processLine(line, map, slackPoster)
+            }
         }
     }
 }
