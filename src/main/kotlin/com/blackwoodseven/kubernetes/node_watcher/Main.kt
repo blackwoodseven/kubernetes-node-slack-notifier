@@ -41,7 +41,7 @@ fun setupShutdownHandler(leaderLock: ILock) {
 fun initializeHazelcast(): HazelcastInstance {
     val hazelcastConfig = com.hazelcast.config.Config()
     hazelcastConfig.setProperty("hazelcast.discovery.enabled", "true")
-    hazelcastConfig.networkConfig.port = 5000
+    hazelcastConfig.networkConfig.port = 5701
     hazelcastConfig.networkConfig.isPortAutoIncrement = false
     hazelcastConfig.networkConfig.join.multicastConfig.isEnabled = false
     hazelcastConfig.networkConfig.join.tcpIpConfig.isEnabled = false
