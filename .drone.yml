@@ -1,5 +1,6 @@
 pipeline:
   build:
+    image: ubuntu
     dockerfile: Dockerfile
     commands:
     - gradle build
