@@ -1,4 +1,5 @@
 pipeline:
   build:
+    dockerfile: Dockerfile
     commands:
     - gradle build
