@@ -1,2 +1,4 @@
 pipeline:
-  build: .
+  build:
+    commands:
+    - gradle build
