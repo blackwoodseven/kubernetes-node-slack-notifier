@@ -1,6 +1,3 @@
 pipeline: 
-  build: 
-    image: ubuntu 
-    dockerfile: Dockerfile 
-    commands: 
-    - gradle build
+  kubernetes-node-watcher:
+    build: .
