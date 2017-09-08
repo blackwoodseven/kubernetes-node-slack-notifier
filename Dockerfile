@@ -1,6 +1,4 @@
 FROM gradle:3.5-jdk-alpine
-ENV RCLONE_VERSION v1.36
-
 # The gradle image runs under the user "gradle", but when you run as gradle, the gradle cache directory is inside a
 # volume, which results in dependencies being wiped on every step in the docker build.
 USER root
