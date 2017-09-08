@@ -1,6 +1,5 @@
 pipeline: 
   kubernetes-node-watcher:
     image: gradle
-    user: root
     commands:
     - gradle test
