@@ -2,4 +2,4 @@ pipeline:
   kubernetes-node-watcher:
     image: gradle
     commands:
-    - gradle test
+    - gradle --info test
