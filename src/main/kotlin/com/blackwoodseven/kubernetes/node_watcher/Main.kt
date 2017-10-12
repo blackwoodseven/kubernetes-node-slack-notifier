@@ -7,6 +7,7 @@ import com.hazelcast.core.ILock
 import com.hazelcast.kubernetes.HazelcastKubernetesDiscoveryStrategyFactory
 import inet.ipaddr.IPAddress
 import mu.KotlinLogging
+import java.net.ConnectException
 import java.nio.file.FileSystems
 import java.util.concurrent.ConcurrentMap
 
@@ -69,36 +70,41 @@ fun main(args : Array<String>) {
         logger.info { "Trying to acquire leader-lock..." }
         leaderLock.lock()
         logger.info { "Acquired leader-lock!" }
-        try {
-            logger.info { "Comparing globalNodeMap to Kubernetes API" }
-            val nodeList = kubernetesAPI.fetchNodeList()
-            val nodeMap = nodeList.items.map { it.metadata.name to it.externalIP }.toMap()
-            val missingNodes = globalNodeMap.keys - nodeMap.keys
-            val newNodes = nodeMap.keys - globalNodeMap.keys
-            missingNodes.forEach {
-                val ip = globalNodeMap.remove(it)
-                if (ip != null) {
-                    slackPoster.post(NodeChangeType.DELETED, ip, globalNodeMap)
-                }
-            }
-            newNodes.forEach {
-                val ip = globalNodeMap.put(it, nodeMap[it])
-                if (ip != null) {
-                    slackPoster.post(NodeChangeType.ADDED, ip, globalNodeMap)
-                }
-            }
 
-            logger.info { "Watching node change stream..." }
-            val changeCharStream = kubernetesAPI.fetchNodeChangeStream(nodeList.metadata.resourceVersion)
-            changeCharStream?.useLines { lineSource ->
-                lineSource.forEach { line ->
-                    processLine(line, globalNodeMap, slackPoster)
-                }
-            }
-        } finally {
-            logger.info { "Releasing leader-lock" }
+        logger.info { "Comparing globalNodeMap to Kubernetes API" }
+        val nodeList: NodeList = try {
+            kubernetesAPI.fetchNodeList()
+        } catch (e: ConnectException) {
+            logger.info { "Could not connect to the Kubernetes API to fetch list of all nodes, releasing leader lock." }
             leaderLock.unlock()
+            continue
         }
 
+        val nodeMap = nodeList.items.map { it.metadata.name to it.externalIP }.toMap()
+        val missingNodes = globalNodeMap.keys - nodeMap.keys
+        val newNodes = nodeMap.keys - globalNodeMap.keys
+        missingNodes.forEach {
+            val ip = globalNodeMap.remove(it)
+            if (ip != null) {
+                slackPoster.post(NodeChangeType.DELETED, ip, globalNodeMap)
+            }
+        }
+        newNodes.forEach {
+            val ip = globalNodeMap.put(it, nodeMap[it])
+            if (ip != null) {
+                slackPoster.post(NodeChangeType.ADDED, ip, globalNodeMap)
+            }
+        }
+
+        logger.info { "Watching node change stream..." }
+        val changeCharStream = kubernetesAPI.fetchNodeChangeStream(nodeList.metadata.resourceVersion)
+        changeCharStream?.useLines { lineSource ->
+            lineSource.forEach { line ->
+                processLine(line, globalNodeMap, slackPoster)
+            }
+        }
+
+        logger.info { "Releasing leader-lock" }
+        leaderLock.unlock()
     }
 }
