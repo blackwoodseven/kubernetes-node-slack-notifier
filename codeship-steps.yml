@@ -1,0 +1,4 @@
+- name: test
+  tag: master
+  service: kubernetes_node_watcher
+  command: gradle test
